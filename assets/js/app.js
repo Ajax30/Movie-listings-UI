@@ -1,16 +1,17 @@
 /*$( "#age_slider" ).slider({
-  strp: 5,
+  step: 5,
   min: 18,
   max: 78,
   animate:"slow",
   orientation: "horizontal"
 });*/
-
 var app = new Vue({
     el: '#app',
     data: {
         movies: [],
         genres: [],
+        genreSelected: "all",
+        filteredMovies: [],
         loading: true,
         errored: false,
         url: "https://api.themoviedb.org/3/movie/now_playing?api_key=10a6546780c9082d52c54eb9c07f5d67&language=en-US&page=1",
@@ -21,20 +22,21 @@ var app = new Vue({
         pages: [],
     },
     methods: {
-        getGenres () {
-          axios.get(this.genreUrl)
-            .then(response => {
-                this.genres = response.data.genres;
-            })
-            .catch(error => {
-                console.log(error)
-            });
-        },    
+        getGenres() {
+            axios.get(this.genreUrl)
+                .then(response => {
+                    this.genres = response.data.genres;
+                })
+                .catch(error => {
+                    console.log(error)
+                });
+        },
         getMovies() {
             axios
                 .get(this.url)
                 .then(response => {
-                    this.movies = response.data.results
+                    this.movies = response.data.results;
+                    this.filteredMovies = response.data.results;
                 })
                 .catch(error => {
                     console.log(error)
@@ -56,7 +58,19 @@ var app = new Vue({
             var to = (page * perPage);
             return movies.slice(from, to);
         },
-         scrollToTop() {
+        getMoviesByGenre() {
+            if (this.genreSelected !== "all") {
+                this.filteredMovies = this.movies.filter(movie => {
+                    return movie.genre_ids.indexOf(this.genreSelected) > -1;
+                });
+                this.setPages(this.filteredMovies);
+                this.filteredMovies = this.paginate(this.filteredMovies);
+                return;
+            }
+            this.setPages(this.movies);
+            this.filteredMovies = this.paginate(this.movies);
+        },
+        scrollToTop() {
             $("html, body").animate({
                 scrollTop: 0
             }, 250);
@@ -77,10 +91,10 @@ var app = new Vue({
             return this.paginate(this.searchResults);
         },
         searchResults() {
-          this.page = 1;
-          return this.movies.filter((movie) => {
-            return movie.title.toLowerCase().match(this.search.toLowerCase());
-          });
+            this.page = 1;
+            return this.movies.filter((movie) => {
+                return movie.title.toLowerCase().match(this.search.toLowerCase());
+            });
         }
     },
     filters: {
