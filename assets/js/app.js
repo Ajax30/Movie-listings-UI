@@ -59,6 +59,7 @@ var app = new Vue({
             return movies.slice(from, to);
         },
         getMoviesByGenre() {
+            this.page = 1; 
             if (this.genreSelected !== "all") {
                 this.filteredMovies = this.movies.filter(movie => {
                     return movie.genre_ids.indexOf(this.genreSelected) > -1;
