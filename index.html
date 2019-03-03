@@ -36,6 +36,14 @@
 		</div>
 
 		<div class="container">
+
+			<div class="toolbar rounded-sm">
+	      <p class="my-0 inline-block text-light-gray">Filter by genre:</p>
+	      <select name="genres" id="genre_filter" class="inline-block">
+	        <option v-for="genre in genres" v-bind:value="genre.id">{{genre.name}}</option>
+	      </select>
+	    </div>
+
 			<div class="grid">
 				<div v-for="(movie, index) in displayedMovies" class="grid-item">
 					<div class="video-box">
