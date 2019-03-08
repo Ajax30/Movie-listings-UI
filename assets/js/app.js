@@ -1,17 +1,9 @@
-/*$( "#age_slider" ).slider({
-  step: 5,
-  min: 18,
-  max: 78,
-  animate:"slow",
-  orientation: "horizontal"
-});*/
 var app = new Vue({
     el: '#app',
     data: {
         movies: [],
         genres: [],
         genreSelected: "all",
-        filteredMovies: [],
         loading: true,
         errored: false,
         url: "https://api.themoviedb.org/3/movie/now_playing?api_key=10a6546780c9082d52c54eb9c07f5d67&language=en-US&page=1",
@@ -20,6 +12,8 @@ var app = new Vue({
         page: 1,
         perPage: 12,
         pages: [],
+        votesFrom: 1,
+        votesTo: 10,
     },
     methods: {
         getGenres() {
@@ -32,11 +26,27 @@ var app = new Vue({
                 });
         },
         getMovies() {
+            let self = this;
             axios
                 .get(this.url)
                 .then(response => {
+                    $("#rating_slider").slider({
+                        range: true,
+                        step: 0.5,
+                        min: 1,
+                        max: 10,
+                        values: [3, 10],
+                        animate: "slow",
+                        orientation: "horizontal",
+                        slide: function(event, ui) {
+                            $(this).find('.ui-state-focus').append($(this).find('#amount').show().text(ui.value));
+                            self.votesFrom = ui.values[0];
+                            self.votesTo = ui.values[1];
+                            self.resetPages();
+                        }
+                    });
                     this.movies = response.data.results;
-                    this.filteredMovies = response.data.results;
+                    this.setPages(this.nonPaginatedMovies);
                 })
                 .catch(error => {
                     console.log(error)
@@ -46,10 +56,12 @@ var app = new Vue({
         },
         setPages(movies) {
             this.pages.length = 0;
-            var numberOfPages = Math.ceil(movies.length / this.perPage);
-            for (var index = 1; index <= numberOfPages; index++) {
-                this.pages.push(index);
-            }
+            console.log('total movies', movies.length);
+            this.pages = Math.ceil(movies.length / this.perPage);
+        },
+        resetPages() {
+            this.page = 1;
+            this.setPages(this.nonPaginatedMovies);
         },
         paginate(movies) {
             var page = this.page;
@@ -57,19 +69,6 @@ var app = new Vue({
             var from = (page * perPage) - perPage;
             var to = (page * perPage);
             return movies.slice(from, to);
-        },
-        getMoviesByGenre() {
-            this.page = 1; 
-            if (this.genreSelected !== "all") {
-                this.filteredMovies = this.movies.filter(movie => {
-                    return movie.genre_ids.indexOf(this.genreSelected) > -1;
-                });
-                this.setPages(this.filteredMovies);
-                this.filteredMovies = this.paginate(this.filteredMovies);
-                return;
-            }
-            this.setPages(this.movies);
-            this.filteredMovies = this.paginate(this.movies);
         },
         scrollToTop() {
             $("html, body").animate({
@@ -82,20 +81,46 @@ var app = new Vue({
         this.getGenres();
         this.getMovies();
     },
+    ready() {
+
+    },
     watch: {
-        displayedMovies() {
-            this.setPages(this.searchResults);
-        }
+
+        search() {
+            this.resetPages()
+        },
+        genreSelected() {
+            this.resetPages()
+        },
+        page() {
+
+        },
     },
     computed: {
-        displayedMovies() {
-            return this.paginate(this.searchResults);
-        },
-        searchResults() {
-            this.page = 1;
+        nonPaginatedMovies() {
             return this.movies.filter((movie) => {
-                return movie.title.toLowerCase().match(this.search.toLowerCase());
-            });
+                let matchesSearch = true;
+                let withinRatingRange = true;
+                let belongsToGenre = true;
+
+
+                if (this.search !== '') {
+                    matchesSearch = movie.title.toLowerCase().match(this.search.toLowerCase());
+
+                }
+
+                withinRatingRange = (movie.vote_average >= this.votesFrom && movie.vote_average <= this.votesTo);
+
+                if (this.genreSelected !== "all") {
+                    belongsToGenre = movie.genre_ids.indexOf(this.genreSelected) > -1;
+                }
+
+                return (matchesSearch && withinRatingRange === true && belongsToGenre === true);
+
+            })
+        },
+        filteredMovies() {
+            return this.paginate(this.nonPaginatedMovies);
         }
     },
     filters: {
