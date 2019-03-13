@@ -213,6 +213,7 @@ body * {
 #slider-container {
   position: relative;
   padding-left: 15px;
+  display: none;
 }
 
 #slider-container p {
@@ -495,7 +496,9 @@ body * {
 
 /* Large devices (desktops, 992px and up) */
 @media (min-width: 992px) {
-
+	#slider-container {
+		display: inline-block;
+	}
 }
 
 /* Extra large devices (large desktops, 1200px and up) */
